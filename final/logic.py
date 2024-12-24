@@ -18,9 +18,85 @@ def calculate_pip_difference(symbol, start_price, current_price):
     return data
 
 
+def execute_trading(data):
+    """Executes trading logic based on the symbol data."""
+    symbol_name = data['symbol']
+    symbol_data = get_symbol_data(symbol_name)
+    threshold_no = data['threshold_no']
+    direction = data['direction']
+    first_positive_threshold = data['first_positive_threshold']
+    first_positive_threshold_price = data['first_positive_threshold_price']
+    second_positive_threshold = data['second_positive_threshold']
+    second_positive_threshold_price = data['second_positive_threshold_price']
+
+    first_negative_threshold = data['first_negative_threshold']
+    first_negative_threshold_price = data['first_negative_threshold_price']
+    second_negative_threshold_price = data['second_positive_threshold_price']
+    second_negative_threshold = data['second_negative_threshold']
+
+    # hedging variables
+    positive_hedging = data['positive_hedging']
+    negative_hedging = data['negative_hedging']
+    positive_hedging_trades_close = data['positive_hedging_trades_close']
+    negative_hedging_trades_close = data['negative_hedging_trades_close']
+
+
+    if not symbol_data:
+        print(f"No data found for symbol: {symbol_name}")
+        return
+    #up direction handling
+    if first_positive_threshold and -1 >= threshold_no > -1.2:
+        print(f"buy {first_positive_threshold_price}")
+    if second_positive_threshold and -2 <= threshold_no <= -1.9:
+        print(f"close the positive trades for {symbol_name} at {second_positive_threshold_price}")
+    #down direction handling
+    if first_negative_threshold and 1 < threshold_no <=1.2:
+        print(f"sell at {first_negative_threshold_price}")
+    if second_negative_threshold and threshold_no >= 2:
+        print(f"close all the negative trades for {symbol_name} at {second_negative_threshold_price}")
+
+    # add hedging case here.
+
+    if positive_hedging:
+        print(f"positive hedging started {symbol_name}")
+    if positive_hedging_trades_close:
+        print(f"positive hedging trades close {symbol_name}")
+
+
+    if negative_hedging:
+        print(f"negative hedging started {symbol_name}")
+    if negative_hedging_trades_close:
+        print(f"negative hedging trades close {symbol_name}")
+
+
 def process_single_price(symbol, start_price, current_price, hedging, last_action=None):
     result = calculate_pip_difference(symbol, start_price, current_price)
     symbol_name = symbol['symbol']
+
+
+    # Ensure all these keys exist, even if they are not triggered
+    always_present_keys = {
+       'first_positive_threshold': False,
+       'first_positive_threshold_price': None,
+       'second_positive_threshold': False,
+       'second_positive_threshold_price': None,
+       'first_negative_threshold': False,
+       'first_negative_threshold_price': None,
+       'second_negative_threshold': False,
+       'second_negative_threshold_price': None,
+       'positive_hedging': False,
+       'positive_hedging_price': None,
+       'negative_hedging': False,
+       'negative_hedging_price': None,
+       'positive_hedging_trades_close': False,
+       'positive_hedging_trades_close_price': None,
+       'negative_hedging_trades_close': False,
+       'negative_hedging_trades_close_price': None
+    }
+
+    # Merge defaults with the actual result
+    for k, v in always_present_keys.items():
+        result.setdefault(k, v)
 
     # Placeholder for fetching stored data
     symbol_stored_data = {}  # Replace with DB logic if needed
@@ -28,8 +104,6 @@ def process_single_price(symbol, start_price, current_price, hedging, last_actio
     # Merge stored data with current result
     if symbol_stored_data:
         result = {**symbol_stored_data, **result}
-
-    print("Stored Data:", symbol_stored_data)
 
     # Handle down direction logic (negative prices decreasing further)
     if result['direction'] == 'down':
@@ -82,12 +156,13 @@ def process_single_price(symbol, start_price, current_price, hedging, last_actio
         result['negative_hedging_trades_close'] = True
         result['negative_hedging_trades_close_price'] = current_price
 
-    print("Result:", result)
     save_or_update_symbol_data(symbol_name, result)
+
     # Placeholder for saving the result (DB or in-memory storage)
     # save_or_update_symbol_data(symbol_name, result)  # Replace with actual DB operation
 
     return hedging, last_action
+
 
 
 def reset_hedging_state(result):
