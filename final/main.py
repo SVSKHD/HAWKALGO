@@ -1,7 +1,7 @@
 from config import symbols_list
-
-hedging={}
-last_actions ={}
+from fetch import fetch_price
+hedging = {}
+last_actions = {}
 
 
 def main():
@@ -13,3 +13,8 @@ def main():
             hedging[symbol_name] = {'positive_hedging': False, 'negative_hedging': False}
         if symbol_name not in last_actions:
             last_actions[symbol_name] = None
+
+        start_price = fetch_price(symbol, "start")
+        current_price = fetch_price(symbol, "current")
+        print("start", start_price, "current", current_price)
+
