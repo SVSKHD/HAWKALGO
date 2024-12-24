@@ -5,18 +5,18 @@ symbols_list = [
         'threshold': 15
     },
     {
-        'symbol': 'EURUSD',
+        'symbol': 'GBPUSD',
         'pip_value': 0.0001,
         'threshold': 15
     },
     {
         'symbol': 'XAUUSD',
-        'pip_value': 0.0001,
+        'pip_value': 0.01,
         'threshold': 20
     },
     {
         'symbol': 'XAGUSD',
         'pip_value': 0.01,
-        'threshold': 200
+        'threshold': 15
     }
 ]

@@ -1,5 +1,5 @@
 from db import get_symbol_data, save_symbol_data, clear_all_keys, update_symbol_data, save_or_update_symbol_data
-
+import numpy as np
 
 def calculate_pip_difference(symbol, start_price, current_price):
     pip_difference = start_price - current_price
@@ -11,8 +11,8 @@ def calculate_pip_difference(symbol, start_price, current_price):
         direction = "up"
     data = {
         'symbol': symbol['symbol'],
-        'pip_difference': round(formatted_pip_difference, 2),
-        'threshold_no': round(formatted_pip_difference / symbol['threshold'], 2),
+        'pip_difference': float(np.float64(round(formatted_pip_difference, 2))),
+        'threshold_no': float(np.float64(round(formatted_pip_difference / symbol['threshold'], 2))),
         'direction': direction
     }
     return data
