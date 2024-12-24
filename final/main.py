@@ -4,8 +4,8 @@ from logic import process_single_price
 from datetime import datetime
 import asyncio
 from notifications import send_discord_message_type
+from utils import connect_mt5
 
-# State management for hedging and last actions
 hedging = {}
 last_actions = {}
 
@@ -40,17 +40,19 @@ async def handle_symbol(symbol):
 
 async def main():
     """Main trading loop."""
-    while True:
-        current_time = datetime.now()
+    connect = await connect_mt5()
+    if connect:
+        while True:
+            current_time = datetime.now()
 
-        # Trading hours check
-        if 0 <= current_time.hour <= 21:
-            tasks = [handle_symbol(symbol) for symbol in symbols_list]
-            await asyncio.gather(*tasks)  # Process all symbols concurrently
-            await asyncio.sleep(1)  # Sleep between iterations
-        else:
-            print(f"Outside trading hours. Current time: {current_time}")
-            await asyncio.sleep(60)
+            # Trading hours check
+            if 0 <= current_time.hour <= 23:
+                tasks = [handle_symbol(symbol) for symbol in symbols_list]
+                await asyncio.gather(*tasks)  # Process all symbols concurrently
+                await asyncio.sleep(1)  # Sleep between iterations
+            else:
+                print(f"Outside trading hours. Current time: {current_time}")
+                await asyncio.sleep(60)
 
 if __name__ == "__main__":
     asyncio.run(main())
