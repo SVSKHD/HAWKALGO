@@ -37,6 +37,8 @@ def calculate_everything(symbol, start_price, current_price):
     }
 
 
+# Updated positive hedge range and logic
+# Updated positive hedge range and logic
 def assemble_logic(symbol, start_price, current_price):
     global hedging_states
     symbol_name = symbol['symbol']
@@ -55,12 +57,29 @@ def assemble_logic(symbol, start_price, current_price):
     direction = data['direction']
     messages = []
 
+    # Debugging current state
+    print(f"Debug: {symbol_name}, Threshold No: {threshold_no}, Direction: {direction}")
+
+    # Handle profit hedging close logic
+    if hedging_states[symbol_name]['negative_hedge']:
+        if direction == 'Down' and threshold_no <= 0.87:
+            print(f"Profit hedging closed for {symbol_name}")
+            hedging_states[symbol_name]['negative_hedge'] = False
+            messages.append(f"Close all negative hedge trades for {symbol_name}")
+
+    # Handle positive hedge close logic
+    if hedging_states[symbol_name]['positive_hedge']:
+        if direction == 'Up' and threshold_no >= -0.87:
+            print(f"Profit positive hedging closed for {symbol_name}")
+            hedging_states[symbol_name]['positive_hedge'] = False
+            messages.append(f"Close all positive hedge trades for {symbol_name}")
+
     # Handle trade actions based on normalized thresholds
     if threshold_no == 1:
         messages.append(f"Place sell trades at {current_price} (1st threshold: {threshold_no}, direction: {direction})")
     elif threshold_no == 2:
         messages.append(f"Close sell trades at {current_price} (2nd threshold: {threshold_no}, direction: {direction})")
-    if 0.4 <= threshold_no <= 0.5:
+    if 0.05 <= threshold_no <= 0.67:  # Expanded positive hedge range
         hedging_states[symbol_name]['positive_hedge'] = True
         hedging_states[symbol_name]['hedge_direction'] = 'sell'
         hedging_states[symbol_name]['hedge_price'] = current_price
@@ -80,8 +99,6 @@ def assemble_logic(symbol, start_price, current_price):
         messages.append(f"No action at {current_price} (outside thresholds)")
 
     return data, messages
-
-
 # Test cases for multiple symbols
 symbols = [
     {'symbol': 'EURUSD', 'pip_value': 0.0001, 'threshold': 15, 'lot': 5.0},
@@ -89,10 +106,18 @@ symbols = [
 ]
 
 # Define test prices for each symbol
-test_prices = {
-    'EURUSD': [1.1015, 1.10000, 1.10075, 1.1050, 1.1025],
-    'GBPUSD': [1.3015, 1.30000, 1.30075, 1.3050, 1.3025],
+# test_prices1 = {
+#     'EURUSD': [1.1015, 1.10000, 1.10075, 1.0050, 1.1000, 1.0995, 1.0990],
+#     'GBPUSD': [1.3015, 1.30000, 1.30075],
+# }
+test_prices2={
+    'EURUSD': [1.1000, 1.0985, 1.099925, 1.10025, 1.1005, 1.1010, 1.1015],
+    'GBPUSD': [1.3000, 1.2985, 1.299925, 1.30025, 1.3005, 1.3010, 1.3015],
 }
+# test_prices = {
+#     'EURUSD': [1.1015, 1.10000, 1.10075, 1.10050, 1.1010, 1.1000, 1.0995, 1.0990, 1.0985, 1.0980, 1.0975],
+#     'GBPUSD': [1.3015, 1.30000, 1.30075, 1.3050, 1.3025],
+# }
 
 start_prices = {
     'EURUSD': 1.1000,
@@ -102,7 +127,7 @@ start_prices = {
 # Run tests for multiple symbols
 for symbol in symbols:
     print(f"\n--- Testing {symbol['symbol']} ---")
-    for price in test_prices[symbol['symbol']]:
+    for price in test_prices2[symbol['symbol']]:
         result, messages = assemble_logic(symbol, start_prices[symbol['symbol']], price)
         print(result)
         print(messages)
