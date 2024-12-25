@@ -38,7 +38,7 @@ async def main():
         today = datetime.now()
 
         # Check if trading is allowed (between 0 and 21 hours)
-        if 0 <= today.hour <= 21:
+        if 0 <= today.hour <= 12:
             print(f"Trading session active at {today.strftime('%Y-%m-%d %H:%M:%S')}.")
 
             # Process all symbols concurrently
