@@ -127,19 +127,19 @@ def initialize_mt5():
     return True
 
 
-# # Symbol configuration
-# eur = {'symbol': 'BTCUSD', 'pip_value': 0.0001, 'threshold': 15, 'lot': 5.0}
-#
-# # Example usage
-# async def main():
-#     if not initialize_mt5():
-#         return
-#     # current_trades = await trade_place(eur, "sell", 0.1, hedge=False)  # Place first trade
-#     close_trades = await close_trades_by_symbol(eur)
-#     # current_trades = await trade_place(eur, "sell", 0.1, hedge=False)  # Place second trade
-#     # current_trades = await trade_place(eur, "sell", 0.1, hedge=False)  # Attempt third trade (should not be placed)
-#     # Testing hedging
-#     # current_trades = await trade_place(eur, "buy", None, hedge=True)  # Hedge: Double trades
-#
-# # Run the script
-# asyncio.run(main())
+# Symbol configuration
+eur = {'symbol': 'EURUSD', 'pip_value': 0.0001, 'threshold': 15, 'lot': 5.0}
+
+# Example usage
+async def main():
+    if not initialize_mt5():
+        return
+    # current_trades = await trade_place(eur, "sell", 0.1, hedge=False)  # Place first trade
+    close_trades = await close_trades_by_symbol(eur)
+    # current_trades = await trade_place(eur, "sell", 0.1, hedge=False)  # Place second trade
+    # current_trades = await trade_place(eur, "sell", 0.1, hedge=False)  # Attempt third trade (should not be placed)
+    # Testing hedging
+    # current_trades = await trade_place(eur, "buy", None, hedge=True)  # Hedge: Double trades
+
+# Run the script
+asyncio.run(main())
