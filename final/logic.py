@@ -1,5 +1,5 @@
-from db import get_symbol_data, save_symbol_data, clear_all_keys, update_symbol_data, save_or_update_symbol_data
-
+import numpy as np
+from trade_place import place_order, close_trades_by_symbol
 
 def calculate_pip_difference(symbol, start_price, current_price):
     pip_difference = start_price - current_price
@@ -11,58 +11,81 @@ def calculate_pip_difference(symbol, start_price, current_price):
         direction = "up"
     data = {
         'symbol': symbol['symbol'],
-        'pip_difference': round(formatted_pip_difference, 2),
-        'threshold_no': round(formatted_pip_difference / symbol['threshold'], 2),
+        'pip_difference': float(np.float64(round(formatted_pip_difference, 2))),
+        'threshold_no': float(np.float64(round(formatted_pip_difference / symbol['threshold'], 2))),
         'direction': direction
     }
     return data
 
 
-def process_single_price(symbol, start_price, current_price, hedging, last_action=None):
+
+async def process_single_price(symbol, start_price, current_price, hedging, last_action=None):
     result = calculate_pip_difference(symbol, start_price, current_price)
     symbol_name = symbol['symbol']
+    lot_size = symbol['lot']
 
-    # Placeholder for fetching stored data
-    symbol_stored_data = {}  # Replace with DB logic if needed
+    # Ensure all these keys exist, even if they are not triggered
+    always_present_keys = {
+       'first_positive_threshold': False,
+       'first_positive_threshold_price': None,
+       'second_positive_threshold': False,
+       'second_positive_threshold_price': None,
+       'first_negative_threshold': False,
+       'first_negative_threshold_price': None,
+       'second_negative_threshold': False,
+       'second_negative_threshold_price': None,
+       'positive_hedging': False,
+       'positive_hedging_price': None,
+       'negative_hedging': False,
+       'negative_hedging_price': None,
+       'positive_hedging_trades_close': False,
+       'positive_hedging_trades_close_price': None,
+       'negative_hedging_trades_close': False,
+       'negative_hedging_trades_close_price': None
+    }
 
-    # Merge stored data with current result
-    if symbol_stored_data:
-        result = {**symbol_stored_data, **result}
-
-    print("Stored Data:", symbol_stored_data)
+    # Merge defaults with the actual result
+    for k, v in always_present_keys.items():
+        result.setdefault(k, v)
 
     # Handle down direction logic (negative prices decreasing further)
     if result['direction'] == 'down':
-        if result['threshold_no'] > 1 and last_action != "sell":
+        if 1.0 <= result['threshold_no'] <= 1.2 and last_action != "sell":
             print(f"Sell at {current_price}")
+            await place_order(symbol, 'sell', lot_size, hedge=False)
             last_action = "sell"
             result['first_negative_threshold'] = True
             result['first_negative_threshold_price'] = current_price
-        elif result['threshold_no'] >= 2 and last_action == "sell":
-            print(f"Close sell trades {current_price}")
+        elif 2.0 <= result['threshold_no'] <= 2.2 and last_action == "sell":
+            print(f"Close sell trades at {current_price}")
+            await close_trades_by_symbol(symbol)
             result['second_negative_threshold'] = True
             result['second_negative_threshold_price'] = current_price
             last_action = "close sell"
-        elif 0.5 >= result['threshold_no'] >= 0.45 and not hedging.get('negative_hedging', False):
+        elif 0.4 <= result['threshold_no'] <= 0.5 and not hedging.get('negative_hedging', False):
             print(f"Hedging initiated at {current_price}")
+            await place_order(symbol, 'buy', lot_size, hedge=True)
             hedging['negative_hedging'] = True
             result['negative_hedging'] = True
             result['negative_hedging_price'] = current_price
 
     # Handle up direction logic (negative prices increasing towards neutral)
     if result['direction'] == 'up':
-        if result['threshold_no'] < -1 and last_action != "buy":
+        if -1.2 <= result['threshold_no'] <= -1.0 and last_action != "buy":
             print(f"Buy at {current_price}")
+            await place_order(symbol, 'buy', lot_size, hedge=False)
             last_action = "buy"
             result['first_positive_threshold'] = True
             result['first_positive_threshold_price'] = current_price
-        elif result['threshold_no'] <= -2 and last_action == "buy":
-            print(f"Close buy trades {current_price}")
+        elif -2.2 <= result['threshold_no'] <= -2.0 and last_action == "buy":
+            print(f"Close buy trades at {current_price}")
+            await close_trades_by_symbol(symbol)
             result['second_positive_threshold'] = True
             result['second_positive_threshold_price'] = current_price
             last_action = "close buy trades"
-        elif -0.5 <= result['threshold_no'] <= -0.45 and not hedging.get('positive_hedging', False):
+        elif -0.5 <= result['threshold_no'] <= -0.4 and not hedging.get('positive_hedging', False):
             print(f"Hedging initiated at {current_price}")
+            await place_order(symbol, 'sell', lot_size, hedge=True)
             hedging['positive_hedging'] = True
             result['positive_hedging'] = True
             result['positive_hedging_price'] = current_price
@@ -70,6 +93,7 @@ def process_single_price(symbol, start_price, current_price, hedging, last_actio
     # Handle hedging close logic
     if hedging.get('positive_hedging', False) and result['direction'] == 'up' and result['threshold_no'] <= -0.8:
         print(f"Hedging closed at {current_price} for positive hedging")
+        await close_trades_by_symbol(symbol)
         result = reset_hedging_state(result)  # Use returned reset result
         hedging['positive_hedging'] = False
         result['positive_hedging_trades_close'] = True
@@ -77,16 +101,13 @@ def process_single_price(symbol, start_price, current_price, hedging, last_actio
 
     if hedging.get('negative_hedging', False) and result['direction'] == 'down' and result['threshold_no'] >= 0.8:
         print(f"Hedging closed at {current_price} for negative hedging")
+        await close_trades_by_symbol(symbol)
         result = reset_hedging_state(result)  # Use returned reset result
         hedging['negative_hedging'] = False
         result['negative_hedging_trades_close'] = True
         result['negative_hedging_trades_close_price'] = current_price
 
-    print("Result:", result)
-    save_or_update_symbol_data(symbol_name, result)
-    # Placeholder for saving the result (DB or in-memory storage)
-    # save_or_update_symbol_data(symbol_name, result)  # Replace with actual DB operation
-
+    # Update hedging state and last action
     return hedging, last_action
 
 
@@ -113,9 +134,3 @@ def reset_hedging_state(result):
     print("After resetting:", reset_result)  # Log after resetting
     return reset_result
 
-
-
-
-
-# hedging = {'hedging': False, 'positive_hedging': False, 'negative_hedging': False}
-# last_action = None

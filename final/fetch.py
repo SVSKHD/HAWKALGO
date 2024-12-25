@@ -24,7 +24,7 @@ def fetch_price(symbol_data, fetch_type):
         tick = mt5.symbol_info_tick(symbol_name)
         if tick:
             current_price = tick.bid
-            print(f"Fetching current price for {symbol_name}: {current_price}")
+            # print(f"Fetching current price for {symbol_name}: {current_price}")
             return current_price
         else:
             print(f"Failed to fetch current price for {symbol_name}.")

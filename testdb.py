@@ -1,4 +1,4 @@
-from db import get_symbol_data, save_symbol_data, update_symbol_data
+from db import get_symbol_data, save_symbol_data, update_symbol_data, clear_all_keys
 
 
 eur_update = {
@@ -16,3 +16,4 @@ eur_update = {
 # data = update_symbol_data('EURUSD', eur_update)
 eur_data = get_symbol_data('EURUSD')
 print(eur_data)
+clear_all_keys()
