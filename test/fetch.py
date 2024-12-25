@@ -12,7 +12,6 @@ def fetch_price(symbol_data, fetch_type):
     # Get the current date and time
     current_date = datetime.now()
     day_of_week = current_date.strftime("%A")
-    target_timestamp = None
 
     if fetch_type == 'current':
         # Ensure MT5 initialization
@@ -24,7 +23,6 @@ def fetch_price(symbol_data, fetch_type):
         tick = mt5.symbol_info_tick(symbol_name)
         if tick:
             current_price = tick.bid
-            # print(f"Fetching current price for {symbol_name}: {current_price}")
             return current_price
         else:
             print(f"Failed to fetch current price for {symbol_name}.")
@@ -49,24 +47,39 @@ def fetch_price(symbol_data, fetch_type):
                 23, 30, 0, tzinfo=server_timezone
             )
 
-        formatted_date = target_time.strftime("%Y-%m-%d %H:%M:%S")
-        target_timestamp = int(target_time.timestamp())
+        while True:
+            formatted_date = target_time.strftime("%Y-%m-%d %H:%M:%S")
+            target_timestamp = int(target_time.timestamp())
 
-        # Ensure MT5 initialization
-        if not mt5.initialize():
-            print("MetaTrader5 initialization failed.")
-            return None
+            # Ensure MT5 initialization
+            if not mt5.initialize():
+                print("MetaTrader5 initialization failed.")
+                return None
 
-        # Fetch price data for the target timestamp
-        ticks = mt5.copy_ticks_from(symbol_name, target_timestamp, 1, mt5.COPY_TICKS_INFO)
-        if ticks is not None and len(ticks) > 0:
-            start_price = ticks['bid'][0]  # Accessing the 'bid' field correctly
-            # print(f"Fetching start price for {symbol_name} at {formatted_date}: {start_price}")
-            return start_price
-        else:
-            print(f"Failed to fetch start price for {symbol_name}. Ensure sufficient tick data is available.")
-            return None
+            # Fetch price data for the target timestamp
+            ticks = mt5.copy_ticks_from(symbol_name, target_timestamp, 1, mt5.COPY_TICKS_INFO)
+            if ticks is not None and len(ticks) > 0:
+                start_price = ticks[0]['bid']  # Accessing the 'bid' field correctly
+                print(f"Fetching start price for {symbol_name} at {formatted_date}: {start_price}")
+                return start_price
+            elif ticks is None or len(ticks) == 0:
+                # Adjust target_time to the previous day's 23:50:00
+                target_time -= timedelta(days=1)
+                target_time = datetime(
+                    target_time.year, target_time.month, target_time.day,
+                    23, 59, 59, tzinfo=server_timezone
+                )
+            else:
+                print(f"Failed to fetch start price for {symbol_name}. Ensure sufficient tick data is available.")
+                return None
 
     else:
         print("Invalid fetch type. Use 'current' or 'start'.")
         return None
+
+
+# Test the function
+eur = {'symbol': 'EURUSD', 'pip_value': 0.0001, 'threshold': 15, 'lot': 5.0}
+
+start_price = fetch_price(eur, 'start')
+print(f"Start price: {start_price}")
