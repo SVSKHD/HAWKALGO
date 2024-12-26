@@ -14,13 +14,13 @@ symbols_list = [
     {
         'symbol': 'XAUUSD',
         'pip_value': 0.01,
-        'threshold': 20,
+        'threshold': 350,
         'lot':1.0
     },
-    # {
-    #     'symbol': 'XAGUSD',
-    #     'pip_value': 0.01,
-    #     'threshold': 15,
-    #     'lot':1.0
-    # }
+    {
+        'symbol': 'XAGUSD',
+        'pip_value': 0.01,
+        'threshold': 12,
+        'lot':1.0
+    }
 ]
