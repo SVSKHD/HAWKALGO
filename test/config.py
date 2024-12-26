@@ -3,13 +3,13 @@ symbols_list = [
         'symbol': 'EURUSD',
         'pip_value': 0.0001,
         'threshold': 15,
-        'lot':5.0
+        'lot':1.0
     },
     {
         'symbol': 'GBPUSD',
         'pip_value': 0.0001,
         'threshold': 15,
-        'lot':5.0
+        'lot':1.0
     },
     {
         'symbol': 'XAUUSD',
